@@ -1,6 +1,8 @@
 var path = require('path');
 var fs = require('fs');
 var archive = require('../helpers/archive-helpers');
+var url = require('url');
+var universal = require('../helpers/universal-helpers');
 
 exports.headers = headers = {
   "access-control-allow-origin": "*",
@@ -11,8 +13,46 @@ exports.headers = headers = {
 };
 
 exports.serveAssets = function(res, asset) {
-  // Write some code here that helps serve up your static files!
-  // (Static files are things like html (yours or archived from others...), css, or anything that doesn't change often.)
+  fs.readFile(asset, universal.failAble(errorOut, sendData));
 };
 
-// As you progress, keep thinking about what helper functions you can put here!
+var sendData = function (res, data, statusCode) {
+  res.writeHead(statusCode || 200, exports.headers);
+  res.end(data);
+};
+
+var errorOut = function (err) {
+  console.error("ERROR at HTTP-HELPERS: ", err);
+};
+
+var notFound = function (response) {
+  res.end("Not Found", 404);
+};
+
+var tryToRoute = function (path, method) {
+  var result = methodRouter[path][method];
+  if (result) {
+    return result;
+  } else {
+    return function (req, res) {
+      errorOut("No method for " + path + " " + method + " requests.");
+      notFound(res);
+    };
+  }
+};
+
+var serveFile = function (file) {
+  return function (req, res) {
+    exports.serveAssets(res, file);
+  };
+};
+
+var methodRouter = {
+  '/': {
+    'GET': serveFile('./public/index.html'),
+  }
+};
+
+exports.router = function (request) {
+  return tryToRoute(url.parse(request.url).pathname, request.method);
+};
