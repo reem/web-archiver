@@ -1,6 +1,7 @@
 var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
+var http = require('http');
 
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
@@ -15,6 +16,10 @@ exports.paths = {
   'list' : path.join(__dirname, '../archives/sites.txt')
 };
 
+exports.errorOut = function (url, err) {
+  console.error("ERROR: " + err + " at " + url);
+};
+
 // Used for stubbing paths for jasmine tests, do not modify
 exports.initialize = function(pathsObj){
   _.each(pathsObj, function(path, type) {
@@ -25,17 +30,45 @@ exports.initialize = function(pathsObj){
 // The following function names are provided to you to suggest how you might
 // modularize your code. Keep it clean!
 
-exports.readListOfUrls = function(){
+exports.readListOfUrls = function (callback) {
+  fs.readFile(exports.path.list, function (file) {
+    callback(file.split("\n"));
+  });
 };
 
-exports.isUrlInList = function(){
+exports.isUrlInList = function (url, callback) {
+  fs.readFile(exports.path.list, function (err, data) {
+    if (err) {
+      exports.errorOut(url, err);
+    }
+  });
 };
 
-exports.addUrlToList = function(){
+exports.addUrlToList = function (url) {
+  fs.appendFile(path.join(exports.list), url, _.id);
 };
 
-exports.isURLArchived = function(){
+exports.isURLArchived = function (url, callback) {
+  fs.exists(path.join(exports.archivedSites, url), callback);
 };
 
-exports.downloadUrls = function(){
+exports.downloadUrl = function (url) {
+  var request = http.request({
+    hostname: url,
+    port: 80,
+    method: 'GET'
+  }, function (response) {
+    response.setEncoding('utf8');
+    response.on('data', function (chunk) {
+      fs.writeFile(path.join(exports.archivedSites, url), chunk);
+    });
+  });
+
+  request.on('success', function () {
+    exports.addUrlToList(url);
+  });
+
+  request.on('error', _.partial(exports.errorOut, url));
+
+  request.end();
 };
