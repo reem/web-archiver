@@ -51,7 +51,7 @@ exports.addUrlToList = function (url) {
 };
 
 exports.isURLArchived = function (url, callback) {
-  fs.exists(path.join(exports.archivedSites, url), callback);
+  fs.exists(path.join(exports.paths.archivedSites, url), callback);
 };
 
 exports.downloadUrl = function (url) {
@@ -63,7 +63,7 @@ exports.downloadUrl = function (url) {
   }, function (response) {
     response.setEncoding('utf8');
     response.on('data', function (chunk) {
-      fs.writeFile(path.join(exports.archivedSites, url), chunk);
+      fs.writeFile(path.join(exports.paths.archivedSites, url), chunk);
     });
   });
 
