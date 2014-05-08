@@ -33,9 +33,13 @@ exports.initialize = function(pathsObj){
 // modularize your code. Keep it clean!
 
 exports.readListOfUrls = function (callback) {
-  fs.readFile(exports.paths.list, universal.failable(errorOut, function (file) {
-    callback(file.toString().split("\n"));
-  }));
+  universal.failable(
+    _.partial(fs.readFile, exports.paths.list), 
+    errorOut, 
+    function (file) {
+      callback(file.toString().split("\n"));
+    }
+  );
 };
 
 exports.isUrlInList = function (url, callback) {

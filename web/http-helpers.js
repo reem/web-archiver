@@ -15,9 +15,13 @@ exports.headers = headers = {
 };
 
 exports.serveAssets = function(res, asset, error, status) {
-  fs.readFile(asset, universal.failable(function (err) {
-    return error ? error(err, res) : [errorOut(err), notFound(res)];
-  }, _.partial(sendData, res, _, status)));
+  universal.failable(
+    _.partial(fs.readFile, asset),
+    function (err) {
+      return error ? error(err, res) : [errorOut(err), notFound(res)];
+    }, 
+    _.partial(sendData, res, _, status)
+  );
 };
 
 var sendData = function (res, data, statusCode) {

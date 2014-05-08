@@ -1,13 +1,13 @@
 var _ = require('underscore');
 
-exports.failable = function (errorer, callback) {
-  return function (err, data) {
+exports.failable = function (failable, error, success) {
+  failable(function (err, data) {
     if (err) {
-      errorer(err);
+      error(err);
     } else {
-      callback(data);
+      success(data);
     }
-  };
+  });
 };
 
 exports.debug = function () {
