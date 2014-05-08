@@ -1,3 +1,5 @@
+var _ = require('underscore');
+
 exports.failable = function (errorer, callback) {
   return function (err, data) {
     if (err) {
@@ -5,5 +7,15 @@ exports.failable = function (errorer, callback) {
     } else {
       callback(data);
     }
+  };
+};
+
+exports.debug = function () {
+  console.log.apply(console, ["LOG: "].concat(_.toArray(arguments)));
+};
+
+exports.not = function (func, context) {
+  return function () {
+    var result = func.apply(context, arguments);
   };
 };
