@@ -5,7 +5,8 @@
   "author": "Hack Reactor",
   "license": "Copyright 2013, Hack Reactor. All rights reserved.",
   "dependencies": {
-    "async": "^0.8.0"
+    "async": "^0.8.0",
+    "mysql": "^2.2.0"
   },
   "devDependencies": {
     "request": "^2.34.0",
