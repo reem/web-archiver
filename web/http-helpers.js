@@ -14,10 +14,10 @@ exports.headers = headers = {
   'Content-Type': "text/html"
 };
 
-exports.serveAssets = function(res, asset, error) {
+exports.serveAssets = function(res, asset, error, status) {
   fs.readFile(asset, universal.failable(function (err) {
     return error ? error(err, res) : [errorOut(err), notFound(res)];
-  }, _.partial(sendData, res)));
+  }, _.partial(sendData, res, _, status)));
 };
 
 var sendData = function (res, data, statusCode) {
@@ -58,7 +58,7 @@ var serveFile = function (file, error) {
   };
 };
 
-var fromForm = function (callback, field) {
+var fromForm = function (callback, field, redirect) {
   return function (req, res) {
     var body = "";
     req.on("data", function (data) {
@@ -67,7 +67,11 @@ var fromForm = function (callback, field) {
     });
     req.on("end", function () {
       callback(qs.parse(body)[field]);
-      sendData(res, "", 302);
+      if (redirect) {
+        exports.serveAssets(res, redirect, undefined, 302);
+      } else {
+        sendData(res, "Posted", 302);
+      }
     });
   };
 };
@@ -94,7 +98,7 @@ var methodRouter = function (path) {
       return { 
         GET: methodRouter('/index.html').GET,
         POST: fromForm(shouldnt(archive.isUrlInList, 
-          archive.addUrlToList), 'url'), };
+          archive.addUrlToList), 'url', './public/index.html'), };
     default:
       if (path)
       return { GET: serveFile('./public' + path, function (err, res) {
