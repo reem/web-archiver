@@ -1,4 +1,3 @@
-var _ = require('underscore');
 var async = require('async');
 var fs = require('fs');
 var path = require('path');
@@ -10,7 +9,7 @@ var universal = require('../helpers/universal-helpers.js');
   // Get our urls.
   archive.readListOfUrls(function (urls) {
     // Get rid of the ones we already archived.
-    async.reject(urls, archive.isUrlArchived, function (results) {
+    async.reject(urls, archive.isURLArchived, function (results) {
       // Download all the others.
       async.each(results, archive.downloadUrl);
     });
