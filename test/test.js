@@ -104,8 +104,8 @@ describe("html fetcher helpers", function(){
     });
   });
 
-  it("should have a 'downloadUrls' function", function(){
-    expect(typeof archive.downloadUrls).to.equal('function');
+  it("should have a 'downloadUrl' function", function(){
+    expect(typeof archive.downloadUrl).to.equal('function');
   });
 
 });

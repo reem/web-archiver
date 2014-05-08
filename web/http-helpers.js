@@ -4,6 +4,7 @@ var archive = require('../helpers/archive-helpers');
 var url = require('url');
 var universal = require('../helpers/universal-helpers');
 var _ = require('underscore');
+var qs = require('querystring');
 
 exports.headers = headers = {
   "access-control-allow-origin": "*",
@@ -13,8 +14,10 @@ exports.headers = headers = {
   'Content-Type': "text/html"
 };
 
-exports.serveAssets = function(res, asset) {
-  fs.readFile(asset, universal.failable(errorOut, _.partial(sendData, res)));
+exports.serveAssets = function(res, asset, error) {
+  fs.readFile(asset, universal.failable(function (err) {
+    return error ? error(err, res) : [errorOut(err), notFound(res)];
+  }, _.partial(sendData, res)));
 };
 
 var sendData = function (res, data, statusCode) {
@@ -27,7 +30,7 @@ var errorOut = function (err) {
 };
 
 var notFound = function (res) {
-  res.end("Not Found", 404);
+  sendData(res, "Not Found", 404);
 };
 
 var tryToRoute = function (path, method) {
@@ -49,18 +52,54 @@ var tryToRoute = function (path, method) {
   }
 };
 
-var serveFile = function (file) {
+var serveFile = function (file, error) {
   return function (req, res) {
-    exports.serveAssets(res, file);
+    exports.serveAssets(res, file, error);
+  };
+};
+
+var fromForm = function (callback, field) {
+  return function (req, res) {
+    var body = "";
+    req.on("data", function (data) {
+      body += data;
+      if (body.length > 1e4) req.connection.destroy();
+    });
+    req.on("end", function () {
+      callback(qs.parse(body)[field]);
+      sendData(res, "", 302);
+    });
+  };
+};
+
+var should = function (cond, callback) {
+  return function (val) {
+    cond(val, function (maybe) {
+      return maybe ? callback(val) : null;
+    });
+  };
+};
+
+var shouldnt = function (cond, callback) {
+  return function (val) {
+    cond(val, function (maybe) {
+      return maybe ? null : callback(val);
+    });
   };
 };
 
 var methodRouter = function (path) {
   switch (path) {
     case '/':
-      return { GET: methodRouter('/index.html').GET };
+      return { 
+        GET: methodRouter('/index.html').GET,
+        POST: fromForm(shouldnt(archive.isUrlInList, 
+          archive.addUrlToList), 'url'), };
     default:
-      return { GET: serveFile('./public' + path) };
+      if (path)
+      return { GET: serveFile('./public' + path, function (err, res) {
+        serveFile('../archives/sites' + path)(undefined, res); // Small hack to pass on res.
+      }) };
   }
 };
 
