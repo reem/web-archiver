@@ -1,2 +1,4 @@
 www.google.com
 www.cnet.com
+www.theverge.com
+www.example.com
