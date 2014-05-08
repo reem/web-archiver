@@ -3,6 +3,7 @@ var fs = require('fs');
 var archive = require('../helpers/archive-helpers');
 var url = require('url');
 var universal = require('../helpers/universal-helpers');
+var _ = require('underscore');
 
 exports.headers = headers = {
   "access-control-allow-origin": "*",
@@ -13,7 +14,7 @@ exports.headers = headers = {
 };
 
 exports.serveAssets = function(res, asset) {
-  fs.readFile(asset, universal.failAble(errorOut, sendData));
+  fs.readFile(asset, universal.failable(errorOut, _.partial(sendData, res)));
 };
 
 var sendData = function (res, data, statusCode) {
@@ -25,12 +26,19 @@ var errorOut = function (err) {
   console.error("ERROR at HTTP-HELPERS: ", err);
 };
 
-var notFound = function (response) {
+var notFound = function (res) {
   res.end("Not Found", 404);
 };
 
 var tryToRoute = function (path, method) {
-  var result = methodRouter[path][method];
+  var result = methodRouter(path);
+  if (!result) {
+    return function (req, res) {
+      errorOut("No route for " + path);
+      notFound(res);
+    };
+  } 
+  result = result[method];
   if (result) {
     return result;
   } else {
@@ -47,9 +55,12 @@ var serveFile = function (file) {
   };
 };
 
-var methodRouter = {
-  '/': {
-    'GET': serveFile('./public/index.html'),
+var methodRouter = function (path) {
+  switch (path) {
+    case '/':
+      return { GET: methodRouter('/index.html').GET };
+    default:
+      return { GET: serveFile('./public' + path) };
   }
 };
 
